@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>বসতবাড়ি ট্র্যাকার</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f1e8;--card:#fff;--ink:#1b2a41;--mut:#6b7280;--acc:#f26b1d;--ok:#16a34a;--line:#e5e0d6;--navy:#1b2a41}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121a26;--card:#1b2634;--ink:#eef2f7;--mut:#9aa6b5;--line:#2b3747}}
+*{box-sizing:border-box}body{margin:0;font-family:"Hind Siliguri",system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:16px}
+h1{margin:0 0 4px;font-size:22px}h2{font-size:16px;margin:0 0 10px}.sub{color:var(--mut);font-size:13px;margin-bottom:16px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi{display:flex;gap:10px;flex-wrap:wrap}.kpi div{flex:1;min-width:110px;background:var(--navy);color:#fff;border-radius:10px;padding:10px}
+.kpi b{display:block;font-size:24px}.kpi span{font-size:12px;opacity:.8}
+label.chk{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+label.chk input{width:18px;height:18px;accent-color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+select,input[type=text],input[type=number],input[type=date]{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);max-width:100%}
+.s-draft{color:var(--mut)}.s-image{color:#b45309}.s-approved{color:#2563eb}.s-scheduled{color:#7c3aed}.s-posted{color:var(--ok);font-weight:700}
+button{font:inherit;background:var(--acc);color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer}button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 10px}.bar i{display:block;height:100%;background:var(--ok)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style></head>
+<body>
+<h1>বসতবাড়ি Structures · ট্র্যাকার</h1>
+<div class="sub">ব্রাউজারে সেভ হয়; সপ্তাহ শেষে Export চাপুন → CivilHub/tracker/data-YYYY-MM-DD.json রাখুন।</div>
+
+<div class="kpi" id="kpi"></div><br>
+<div class="grid">
+ <div class="card">
+  <h2>আজকের চেকলিস্ট <span id="today" class="sub"></span></h2>
+  <div class="bar"><i id="todaybar"></i></div>
+  <div id="daily"></div>
+  <div class="row" style="margin-top:8px"><button class="ghost" onclick="resetDaily()">নতুন দিন শুরু</button></div>
+ </div>
+ <div class="card">
+  <h2>মেট্রিক লগ (প্রতিদিন রাতে)</h2>
+  <div class="row">
+   <input type="date" id="m-date"><input type="number" id="m-fol" placeholder="ফলোয়ার" style="width:90px">
+   <input type="number" id="m-reach" placeholder="রিচ" style="width:90px"><input type="number" id="m-q" placeholder="প্রশ্ন" style="width:70px">
+   <button onclick="addMetric()">যোগ</button>
+  </div>
+  <table id="mtable"><thead><tr><th>তারিখ</th><th>ফলোয়ার</th><th>রিচ</th><th>প্রশ্ন</th><th></th></tr></thead><tbody></tbody></table>
+ </div>
+</div><br>
+<div class="card">
+ <div class="row" style="justify-content:space-between"><h2>কনটেন্ট পাইপলাইন (সপ্তাহ ১)</h2>
+  <div class="row"><button class="ghost" onclick="exportJSON()">Export</button><button class="ghost" onclick="document.getElementById('imp').click()">Import</button><input type="file" id="imp" hidden onchange="importJSON(this)"></div></div>
+ <div class="bar"><i id="postbar"></i></div>
+ <table id="ptable"><thead><tr><th>দিন</th><th>সময়</th><th>ধরন</th><th>শিরোনাম</th><th>ইঞ্জি. চেক</th><th>স্ট্যাটাস</th><th>লিংক / রিচ</th></tr></thead><tbody></tbody></table>
+</div><br>
+<div class="card"><h2>সেটআপ (একবার)</h2><div id="setup"></div></div>
+
+<script>
+const DAILY=["০৮:০০ প্রশ্ন-কার্ড পোস্ট হয়েছে","১২:৩০ মিথ/সত্য পোস্ট হয়েছে","অডিও সেগমেন্ট কাট (48 kHz)","৫টি Flow ইমেজ তৈরি","রিল রেন্ডার + কভার","মিনহাজ তথ্য ✅ · বাপ্পী কভার ✅","১৭:০০ রিল FB + YT Shorts + TikTok (টাইটেল+ডেসক্রিপশন)","২০:৩০ সংখ্যার পোস্ট","ক্রেডিট/লিংক প্রথম কমেন্টে","সন্ধ্যায় কমেন্ট উত্তর (১৫ মিনিট)","২টা FB গ্রুপে মূল্য-পোস্ট","মেট্রিক লগে আজকের সংখ্যা"];
+const SETUP=["কভার ফটো (ট্যাগলাইন + WhatsApp)","প্রোফাইল ছবি (লোগো)","About + সার্ভিস লিস্ট + ওয়েবসাইট লিংক","WhatsApp/Call বাটন","ইউজারনেম সেট (@bosotbari.structures)","ওয়েবসাইট Vercel-এ ডিপ্লয়","প্রশ্ন ফর্মের endpoint বসানো (website/ask.html)","YouTube চ্যানেল + TikTok খোলা","মিনহাজের সাথে সাপ্তাহিক রেকর্ডিং স্লট ঠিক","১০টা টার্গেট FB গ্রুপের লিস্ট"];
+const DAYS=["সোম ৩","মঙ্গল ৪","বুধ ৫","বৃহ ৬","শুক্র ৭","শনি ৮","রবি ৯"];
+const TITLES=[["কাঠামোয় কত %?","ইঞ্জিনিয়ার নিলে খরচ বাড়ে?","V1 টাকা কোথায় যায়","৪০% কাঠামো · ৬০% ফিনিশিং"],["১ তলায় সয়েল টেস্ট?","দেখে মাটি বোঝা যায়?","V2 সয়েল টেস্ট","সয়েল টেস্ট ১০–১৫ হাজার"],["কয়টা ড্রইং লাগে?","সুন্দর ৩D-ই যথেষ্ট?","V3 ৪টা ড্রইং","৪ স্তম্ভ"],["৩০০০ বর্গফুট খরচ?","প্রথম দিনেই দাম?","V4 খরচ কখন","১৫০০ টাকা/বর্গফুট"],["রডের দৈর্ঘ্য কত?","দোকানদারের ওজন?","V5 রড কেনা","১২ মিটার"],["সবচেয়ে দামি রড লাগে?","দামি ব্র্যান্ড = সেফ?","V6 ব্র্যান্ড নয় স্ট্রেন্থ","স্টোন চিপস > খোয়া"],["কয়জনের সাইন?","BSc মানেই ডিজাইন?","V7 রিক্যাপ","৫টা সংখ্যা কারোসেল"]];
+const TYPES=["প্রশ্ন-কার্ড","মিথ/সত্য","ভিডিও","সংখ্যা"],TIMES=["08:00","12:30","17:00","20:30"],STATUS=["draft","image","approved","scheduled","posted"];
+const K="bosotbari-tracker";let S=JSON.parse(localStorage.getItem(K)||"null")||{daily:{},date:"",setup:{},posts:{},metrics:[]};
+const save=()=>{localStorage.setItem(K,JSON.stringify(S));render()};
+function render(){
+ const t=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);if(S.date!==t){S.date=t;S.daily={}}
+ document.getElementById("today").textContent=t;
+ let d=document.getElementById("daily");d.innerHTML=DAILY.map((x,i)=>`<label class="chk"><input type="checkbox" ${S.daily[i]?"checked":""} onchange="S.daily[${i}]=this.checked;save()">${x}</label>`).join("");
+ document.getElementById("todaybar").style.width=(Object.values(S.daily).filter(Boolean).length/DAILY.length*100)+"%";
+ document.getElementById("setup").innerHTML=SETUP.map((x,i)=>`<label class="chk"><input type="checkbox" ${S.setup[i]?"checked":""} onchange="S.setup[${i}]=this.checked;save()">${x}</label>`).join("");
+ let rows="",done=0,tot=0;DAYS.forEach((day,di)=>TITLES[di].forEach((ti,pi)=>{const id=di+"-"+pi,p=S.posts[id]||{};tot++;if(p.st==="posted")done++;
+  rows+=`<tr><td>${day}</td><td>${TIMES[pi]}</td><td>${TYPES[pi]}</td><td>${ti}</td><td><input type="checkbox" ${p.eng?"checked":""} onchange="up('${id}','eng',this.checked)"></td><td><select class="s-${p.st||"draft"}" onchange="up('${id}','st',this.value)">${STATUS.map(s=>`<option ${p.st===s?"selected":""}>${s}</option>`).join("")}</select></td><td><input type="text" value="${p.note||""}" placeholder="লিংক · রিচ" onchange="up('${id}','note',this.value)" style="width:140px"></td></tr>`}));
+ document.querySelector("#ptable tbody").innerHTML=rows;document.getElementById("postbar").style.width=(done/tot*100)+"%";
+ document.querySelector("#mtable tbody").innerHTML=S.metrics.map((m,i)=>`<tr><td>${m.d}</td><td>${m.f}</td><td>${m.r}</td><td>${m.q}</td><td><button class="ghost" onclick="S.metrics.splice(${i},1);save()">✕</button></td></tr>`).join("");
+ const last=S.metrics[S.metrics.length-1]||{},first=S.metrics[0]||{};
+ document.getElementById("kpi").innerHTML=`<div><b>${last.f??60}</b><span>ফলোয়ার (শুরু ৬০)</span></div><div><b>${(last.f??60)-(first.f??60)}</b><span>বৃদ্ধি</span></div><div><b>${done}/${tot}</b><span>পোস্ট হয়েছে</span></div><div><b>${S.metrics.reduce((a,m)=>a+(+m.q||0),0)}</b><span>প্রশ্ন এসেছে</span></div><div><b>${Math.max(0,Math.ceil((new Date("2026-11-30")-new Date())/864e5))}</b><span>দিন বাকি (১০০০ লক্ষ্য)</span></div>`;
+}
+function up(id,k,v){S.posts[id]=S.posts[id]||{};S.posts[id][k]=v;save()}
+function addMetric(){const d=m("m-date").value||S.date;S.metrics.push({d,f:+m("m-fol").value||0,r:+m("m-reach").value||0,q:+m("m-q").value||0});S.metrics.sort((a,b)=>a.d<b.d?-1:1);save()}
+function resetDaily(){S.daily={};save()}
+function m(i){return document.getElementById(i)}
+function exportJSON(){const a=document.createElement("a");a.href="data:application/json,"+encodeURIComponent(JSON.stringify(S,null,1));a.download="data-"+S.date+".json";a.click()}
+function importJSON(inp){const r=new FileReader();r.onload=()=>{S=JSON.parse(r.result);save()};r.readAsText(inp.files[0])}
+render();
+</script></body></html>

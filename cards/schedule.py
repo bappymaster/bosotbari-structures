@@ -8,10 +8,12 @@ ep=os.path.join(ROOT,"..",".env")
 for l in (open(ep) if os.path.exists(ep) else []):
     if "=" in l and not l.startswith("#"): k,v=l.strip().split("=",1); env[k]=v.strip()
 TOK=env.get("BOSOT_PAGE_TOKEN"); 
-ap=argparse.ArgumentParser(); ap.add_argument("--start",required=True); ap.add_argument("--dry",action="store_true"); ap.add_argument("--hour",type=int,default=20); ap.add_argument("--minute",type=int,default=30); a=ap.parse_args()
+ap=argparse.ArgumentParser(); ap.add_argument("--start",required=True); ap.add_argument("--dry",action="store_true"); ap.add_argument("--hour",type=int,default=20); ap.add_argument("--minute",type=int,default=30); ap.add_argument("--only",default=""); a=ap.parse_args()
 cards=json.load(open(os.path.join(ROOT,"cards30.json")))
 start=datetime.date.fromisoformat(a.start); BST=datetime.timezone(datetime.timedelta(hours=6))
+only=[int(x) for x in a.only.split(",") if x]
 for c in cards:
+    if only and c["d"] not in only: continue
     day=start+datetime.timedelta(days=c["d"]-1)
     when=int(datetime.datetime(day.year,day.month,day.day,a.hour,a.minute,tzinfo=BST).timestamp())
     cap=f"{c['t']}\n\n{c['s']}\n\nআপনার বাড়ির ক্ষেত্রে কী হয়েছিল? কমেন্টে লিখুন। প্রশ্ন থাকলে ইনবক্স করুন।\n\n#বসতবাড়ি #বাড়িনির্মাণ #সিভিলইঞ্জিনিয়ারিং #StructuralEngineering #Dhaka"
